@@ -46,6 +46,8 @@ PostgreSQL 16
 
 1 CPU • 1 Гб RAM • 8 Гб NVMe
 
+в образце пользователь gen_user
+
 Подключитесь к вашему серверу PostgreSQL и создайте новую базу данных:
     ```sql
     CREATE DATABASE energo_db;
