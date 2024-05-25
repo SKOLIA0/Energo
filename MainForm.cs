@@ -274,7 +274,7 @@ namespace Energo
                     {
                         foreach (DataRow row in table.Rows)
                         {
-                            // Формирование SQL-запроса для вставки данных
+                            // Формирование параметризованного SQL-запроса для вставки данных
                             string insertQuery = $"INSERT INTO {table.TableName} ({string.Join(", ", table.Columns.Cast<DataColumn>().Select(c => c.ColumnName))}) VALUES ({string.Join(", ", row.ItemArray.Select((item, index) => $"@p{index}"))}) ON CONFLICT DO NOTHING";
                             using (NpgsqlCommand command = new NpgsqlCommand(insertQuery, connection))
                             {
@@ -284,30 +284,8 @@ namespace Energo
                                     string columnName = table.Columns[i].ColumnName;
                                     Type columnType = table.Columns[i].DataType;
 
-                                    // Обработка столбцов для таблицы Clients
-                                    if (table.TableName == "Clients" && columnName == "id")
-                                    {
-                                        command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Integer) { Value = Convert.ToInt32(value) });
-                                    }
-                                    else if (table.TableName == "Clients" && (columnName == "createdat" || columnName == "updatedat"))
-                                    {
-                                        command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = Convert.ToDateTime(value) });
-                                    }
-                                    // Обработка столбцов для таблицы Accounts
-                                    else if (table.TableName == "Accounts" && (columnName == "accountnumber" || columnName == "clientid"))
-                                    {
-                                        command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Integer) { Value = Convert.ToInt32(value) });
-                                    }
-                                    else if (table.TableName == "Accounts" && columnName == "balance")
-                                    {
-                                        command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Numeric) { Value = Convert.ToDecimal(value) });
-                                    }
-                                    else if (table.TableName == "Accounts" && (columnName == "createdat" || columnName == "updatedat"))
-                                    {
-                                        command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = Convert.ToDateTime(value) });
-                                    }
-                                    // Общая обработка для всех таблиц
-                                    else if (columnType == typeof(int))
+                                    // Пример обработки различных типов данных
+                                    if (columnType == typeof(int))
                                     {
                                         command.Parameters.Add(new NpgsqlParameter($"@p{i}", NpgsqlTypes.NpgsqlDbType.Integer) { Value = Convert.ToInt32(value) });
                                     }
@@ -353,5 +331,6 @@ namespace Energo
                 MessageBox.Show($"Ошибка импорта данных из XML: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
     }
 }

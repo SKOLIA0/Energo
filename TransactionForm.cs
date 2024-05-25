@@ -3,20 +3,21 @@ using System.Data;
 using System.Windows.Forms;
 using Npgsql;
 
-
 namespace Energo
 {
     public partial class TransactionForm : Form
     {
         private NpgsqlConnection connection;
 
+        // Конструктор формы транзакции
         public TransactionForm(NpgsqlConnection connection)
         {
             InitializeComponent();
             this.connection = connection;
-            LoadClients();
+            LoadClients(); // Загрузка списка клиентов при инициализации формы
         }
 
+        // Метод для загрузки списка клиентов
         private void LoadClients()
         {
             string query = "SELECT ID, Name FROM Clients";
@@ -24,22 +25,26 @@ namespace Energo
             DataTable clientsTable = new DataTable();
             adapter.Fill(clientsTable);
 
+            // Настройка данных для ComboBox отправителя
             comboBoxSenderClient.DataSource = clientsTable.Copy();
             comboBoxSenderClient.DisplayMember = "Name";
             comboBoxSenderClient.ValueMember = "ID";
             comboBoxSenderClient.SelectedIndex = -1;
 
+            // Настройка данных для ComboBox получателя
             comboBoxRecipientClient.DataSource = clientsTable.Copy();
             comboBoxRecipientClient.DisplayMember = "Name";
             comboBoxRecipientClient.ValueMember = "ID";
             comboBoxRecipientClient.SelectedIndex = -1;
 
+            // Подписка на события изменения выбора
             comboBoxSenderClient.SelectedIndexChanged += comboBoxSenderClient_SelectedIndexChanged;
             comboBoxRecipientClient.SelectedIndexChanged += comboBoxRecipientClient_SelectedIndexChanged;
             comboBoxSenderAccount.SelectedIndexChanged += comboBoxSenderAccount_SelectedIndexChanged;
             comboBoxRecipientAccount.SelectedIndexChanged += comboBoxRecipientAccount_SelectedIndexChanged;
         }
 
+        // Обработчик события изменения выбора клиента-отправителя
         private void comboBoxSenderClient_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBoxSenderClient.SelectedIndex != -1)
@@ -49,6 +54,7 @@ namespace Energo
             }
         }
 
+        // Обработчик события изменения выбора клиента-получателя
         private void comboBoxRecipientClient_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBoxRecipientClient.SelectedIndex != -1)
@@ -58,6 +64,7 @@ namespace Energo
             }
         }
 
+        // Метод для загрузки счетов выбранного клиента
         private void LoadAccounts(ComboBox clientComboBox, ComboBox accountComboBox)
         {
             if (clientComboBox.SelectedValue is DataRowView)
@@ -79,6 +86,7 @@ namespace Energo
             }
         }
 
+        // Обработчик события изменения выбора счета отправителя
         private void comboBoxSenderAccount_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBoxSenderAccount.SelectedIndex != -1)
@@ -91,6 +99,7 @@ namespace Energo
             }
         }
 
+        // Обработчик события изменения выбора счета получателя
         private void comboBoxRecipientAccount_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (comboBoxRecipientAccount.SelectedIndex != -1)
@@ -103,6 +112,7 @@ namespace Energo
             }
         }
 
+        // Метод для обновления баланса выбранного счета
         private void UpdateBalance(ComboBox accountComboBox, Label balanceLabel)
         {
             if (accountComboBox.SelectedValue != null)
@@ -115,29 +125,35 @@ namespace Energo
                     {
                         command.Parameters.AddWithValue("@AccountNumber", accountNumber);
                         connection.Open();
-                        object result = command.ExecuteScalar();
-                        connection.Close();
-
-                        if (result != null)
+                        try
                         {
-                            balanceLabel.Text = "Баланс: " + result.ToString();
+                            object result = command.ExecuteScalar();
+                            if (result != null)
+                            {
+                                balanceLabel.Text = "Баланс: " + result.ToString();
+                            }
+                            else
+                            {
+                                balanceLabel.Text = "Баланс:";
+                            }
                         }
-                        else
+                        finally
                         {
-                            balanceLabel.Text = "Баланс:";
+                            connection.Close();
                         }
                     }
                 }
             }
         }
 
+        // Обработчик события нажатия кнопки для выполнения транзакции
         private void buttonSubmit_Click(object sender, EventArgs e)
         {
-            // Проверяем, что выбраны счета отправителя и получателя и что введена сумма перевода
             int fromAccount;
             int toAccount;
             decimal amount;
 
+            // Проверяем, что выбраны счета отправителя и получателя и что введена сумма перевода
             if (comboBoxSenderAccount.SelectedIndex != -1 && comboBoxRecipientAccount.SelectedIndex != -1 &&
                 int.TryParse(comboBoxSenderAccount.SelectedValue.ToString(), out fromAccount) &&
                 int.TryParse(comboBoxRecipientAccount.SelectedValue.ToString(), out toAccount) &&
@@ -222,6 +238,7 @@ namespace Energo
             }
         }
 
+        // Метод для получения баланса счета
         private decimal GetAccountBalance(int accountNumber)
         {
             string query = "SELECT Balance FROM Accounts WHERE AccountNumber = @AccountNumber";
@@ -229,16 +246,21 @@ namespace Energo
             {
                 command.Parameters.AddWithValue("@AccountNumber", accountNumber);
                 connection.Open();
-                object result = command.ExecuteScalar();
-                connection.Close();
-
-                if (result != null && result != DBNull.Value)
+                try
                 {
-                    return Convert.ToDecimal(result);
+                    object result = command.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        return Convert.ToDecimal(result);
+                    }
+                    else
+                    {
+                        throw new Exception("Ошибка получения баланса счета");
+                    }
                 }
-                else
+                finally
                 {
-                    throw new Exception("Ошибка получения баланса счета");
+                    connection.Close();
                 }
             }
         }
