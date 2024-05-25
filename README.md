@@ -92,24 +92,6 @@ CREATE TABLE Transactions (
 ```
 
 ```sql 
--- Вставка тестовых данных в таблицу Clients
-INSERT INTO Clients (Name) VALUES 
-('Client 1'), 
-('Client 2'), 
-('Client 3'), 
-('Client 4'), 
-('Client 5');
-```
-```sql 
--- Вставка тестовых данных в таблицу Accounts
-INSERT INTO Accounts (ClientID, Balance) VALUES 
-(1, 1000.00), (1, 1500.00),
-(2, 2000.00), (2, 2500.00),
-(3, 3000.00), (3, 3500.00),
-(4, 4000.00), (4, 4500.00),
-(5, 5000.00), (5, 5500.00);
-```
-```sql 
 -- Создание функции для обновления поля UpdatedAt
 -- Эта функция будет использоваться триггерами для автоматического обновления поля UpdatedAt при изменении записей
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -136,6 +118,25 @@ BEFORE UPDATE ON Accounts
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 ```
+```sql 
+-- Вставка тестовых данных в таблицу Clients
+INSERT INTO Clients (Name) VALUES 
+('Client 1'), 
+('Client 2'), 
+('Client 3'), 
+('Client 4'), 
+('Client 5');
+```
+```sql 
+-- Вставка тестовых данных в таблицу Accounts
+INSERT INTO Accounts (ClientID, Balance) VALUES 
+(1, 1000.00), (1, 1500.00),
+(2, 2000.00), (2, 2500.00),
+(3, 3000.00), (3, 3500.00),
+(4, 4000.00), (4, 4500.00),
+(5, 5000.00), (5, 5500.00);
+```
+
 ```sql 
 -- Создание триггера для таблицы Transactions
 -- Триггер обновляет поле UpdatedAt при изменении записей в таблице Transactions
