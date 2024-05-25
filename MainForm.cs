@@ -12,6 +12,7 @@ namespace Energo
     {
         private NpgsqlConnection connection;
 
+        // Конструктор формы
         public MainForm()
         {
             InitializeComponent();
@@ -30,6 +31,7 @@ namespace Energo
                     throw new ArgumentException("Одна или несколько переменных окружения отсутствуют или некорректны.");
                 }
 
+                // Формирование строки подключения к базе данных
                 string connectionString = $"Host={host};Username={user};Password={password};Database={database}";
                 connection = new NpgsqlConnection(connectionString);
 
@@ -37,6 +39,7 @@ namespace Energo
                 connection.Open();
                 connection.Close();
 
+                // Загрузка списка клиентов при инициализации формы
                 LoadClients();
             }
             catch (ArgumentException argEx)
@@ -49,18 +52,43 @@ namespace Energo
                 MessageBox.Show($"Ошибка соединения с базой данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1); // Завершение программы в случае ошибки подключения
             }
+            // Подписка на событие загрузки формы
+            this.Load += new EventHandler(MainForm_Load);
         }
 
+        // Метод для обработки загрузки формы
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadClients(); // Загрузка списка клиентов
+
+            // Выбор первого клиента и его счета
+            if (dataGridViewClients.Rows.Count > 0)
+            {
+                dataGridViewClients.Rows[0].Selected = true;
+                int clientId = Convert.ToInt32(dataGridViewClients.Rows[0].Cells["ID"].Value);
+                LoadAccounts(clientId);
+
+                if (dataGridViewAccounts.Rows.Count > 0)
+                {
+                    dataGridViewAccounts.Rows[0].Selected = true;
+                    int accountNumber = Convert.ToInt32(dataGridViewAccounts.Rows[0].Cells["AccountNumber"].Value);
+                    LoadTransactions(accountNumber);
+                }
+            }
+        }
+
+
+        // Метод для загрузки списка клиентов
         private void LoadClients()
         {
             try
             {
-                string query = "SELECT ID, Name FROM Clients";
-                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection);
-                DataTable clientsTable = new DataTable();
-                adapter.Fill(clientsTable);
-                dataGridViewClients.DataSource = clientsTable;
-                dataGridViewClients.Columns["ID"].Visible = false;
+                string query = "SELECT ID, Name FROM Clients"; // SQL-запрос для получения списка клиентов
+                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection); // Адаптер для выполнения запроса
+                DataTable clientsTable = new DataTable(); // Таблица для хранения результатов запроса
+                adapter.Fill(clientsTable); // Заполнение таблицы данными
+                dataGridViewClients.DataSource = clientsTable; // Установка таблицы в качестве источника данных для грида
+                dataGridViewClients.Columns["ID"].Visible = false; // Скрытие колонки ID
 
                 if (clientsTable.Rows.Count == 0)
                 {
@@ -73,30 +101,39 @@ namespace Energo
             }
         }
 
+        // Обработчик события клика по ячейке в гриде клиентов
         private void dataGridViewClients_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0)
+            if (e.RowIndex >= 0 && dataGridViewClients.Rows[e.RowIndex].Cells["ID"].Value != DBNull.Value)
             {
                 DataGridViewRow row = dataGridViewClients.Rows[e.RowIndex];
-                int clientId = Convert.ToInt32(row.Cells["ID"].Value);
-                LoadAccounts(clientId);
+                int clientId = Convert.ToInt32(row.Cells["ID"].Value); // Получение ID выбранного клиента
+                LoadAccounts(clientId); // Загрузка счетов для выбранного клиента
             }
         }
 
+        // Метод для загрузки счетов клиента
         private void LoadAccounts(int clientId)
         {
             try
             {
-                string query = "SELECT AccountNumber, Balance FROM Accounts WHERE ClientID = @ClientID";
-                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection);
-                adapter.SelectCommand.Parameters.AddWithValue("@ClientID", clientId);
-                DataTable accountsTable = new DataTable();
-                adapter.Fill(accountsTable);
-                dataGridViewAccounts.DataSource = accountsTable;
+                string query = "SELECT AccountNumber, Balance FROM Accounts WHERE ClientID = @ClientID"; // SQL-запрос для получения счетов клиента
+                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection); // Адаптер для выполнения запроса
+                adapter.SelectCommand.Parameters.AddWithValue("@ClientID", clientId); // Добавление параметра запроса
+                DataTable accountsTable = new DataTable(); // Таблица для хранения результатов запроса
+                adapter.Fill(accountsTable); // Заполнение таблицы данными
+                dataGridViewAccounts.DataSource = accountsTable; // Установка таблицы в качестве источника данных для грида
 
                 if (accountsTable.Rows.Count == 0)
                 {
                     MessageBox.Show("Нет данных в таблице Accounts для выбранного клиента", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    // Автоматический выбор первой строки и загрузка истории транзакций
+                    dataGridViewAccounts.Rows[0].Selected = true;
+                    int accountNumber = Convert.ToInt32(accountsTable.Rows[0]["AccountNumber"]);
+                    LoadTransactions(accountNumber);
                 }
             }
             catch (Exception ex)
@@ -105,16 +142,18 @@ namespace Energo
             }
         }
 
+        // Обработчик события клика по ячейке в гриде счетов
         private void dataGridViewAccounts_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0)
+            if (e.RowIndex >= 0 && dataGridViewAccounts.Rows[e.RowIndex].Cells["AccountNumber"].Value != DBNull.Value)
             {
                 DataGridViewRow row = dataGridViewAccounts.Rows[e.RowIndex];
-                int accountNumber = Convert.ToInt32(row.Cells["AccountNumber"].Value);
-                LoadTransactions(accountNumber);
+                int accountNumber = Convert.ToInt32(row.Cells["AccountNumber"].Value); // Получение номера счета
+                LoadTransactions(accountNumber); // Загрузка транзакций для выбранного счета
             }
         }
 
+        // Метод для загрузки транзакций по счету
         private void LoadTransactions(int accountNumber)
         {
             try
@@ -128,12 +167,12 @@ namespace Energo
                         TransactionDate 
                     FROM Transactions 
                     WHERE FromAccount = @AccountNumber OR ToAccount = @AccountNumber 
-                    ORDER BY TransactionDate DESC";
-                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection);
-                adapter.SelectCommand.Parameters.AddWithValue("@AccountNumber", accountNumber);
-                DataTable transactionsTable = new DataTable();
-                adapter.Fill(transactionsTable);
-                dataGridViewAccountHistory.DataSource = transactionsTable;
+                    ORDER BY TransactionDate DESC"; // SQL-запрос для получения транзакций по счету
+                NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(query, connection); // Адаптер для выполнения запроса
+                adapter.SelectCommand.Parameters.AddWithValue("@AccountNumber", accountNumber); // Добавление параметра запроса
+                DataTable transactionsTable = new DataTable(); // Таблица для хранения результатов запроса
+                adapter.Fill(transactionsTable); // Заполнение таблицы данными
+                dataGridViewAccountHistory.DataSource = transactionsTable; // Установка таблицы в качестве источника данных для грида
 
                 if (transactionsTable.Rows.Count == 0)
                 {
@@ -146,49 +185,53 @@ namespace Energo
             }
         }
 
+        // Обработчик события нажатия кнопки для выполнения транзакции
         private void buttonTransfer_Click(object sender, EventArgs e)
         {
             using (TransactionForm transactionForm = new TransactionForm(connection))
             {
-                transactionForm.ShowDialog();
+                transactionForm.ShowDialog(); // Открытие формы для выполнения транзакции
             }
         }
 
+        // Обработчик события нажатия кнопки для экспорта данных в XML
         private void buttonExport_Click(object sender, EventArgs e)
         {
-            ExportToXml();
+            ExportToXml(); // Вызов метода для экспорта данных
         }
 
+        // Обработчик события нажатия кнопки для импорта данных из XML
         private void buttonImport_Click(object sender, EventArgs e)
         {
-            ImportFromXml();
+            ImportFromXml(); // Вызов метода для импорта данных
         }
 
+        // Метод для экспорта данных в XML файл
         private void ExportToXml()
         {
             try
             {
-                DataSet dataSet = new DataSet("NewDataSet");
-                string clientsQuery = "SELECT * FROM Clients";
-                string accountsQuery = "SELECT * FROM Accounts";
+                DataSet dataSet = new DataSet("NewDataSet"); // Создание нового набора данных
+                string clientsQuery = "SELECT * FROM Clients"; // SQL-запрос для получения всех клиентов
+                string accountsQuery = "SELECT * FROM Accounts"; // SQL-запрос для получения всех счетов
 
-                NpgsqlDataAdapter clientsAdapter = new NpgsqlDataAdapter(clientsQuery, connection);
-                NpgsqlDataAdapter accountsAdapter = new NpgsqlDataAdapter(accountsQuery, connection);
+                NpgsqlDataAdapter clientsAdapter = new NpgsqlDataAdapter(clientsQuery, connection); // Адаптер для выполнения запроса клиентов
+                NpgsqlDataAdapter accountsAdapter = new NpgsqlDataAdapter(accountsQuery, connection); // Адаптер для выполнения запроса счетов
 
-                DataTable clientsTable = new DataTable("Clients");
-                DataTable accountsTable = new DataTable("Accounts");
+                DataTable clientsTable = new DataTable("Clients"); // Таблица для хранения данных клиентов
+                DataTable accountsTable = new DataTable("Accounts"); // Таблица для хранения данных счетов
 
-                clientsAdapter.Fill(clientsTable);
-                accountsAdapter.Fill(accountsTable);
+                clientsAdapter.Fill(clientsTable); // Заполнение таблицы данными клиентов
+                accountsAdapter.Fill(accountsTable); // Заполнение таблицы данными счетов
 
-                dataSet.Tables.Add(clientsTable);
-                dataSet.Tables.Add(accountsTable);
+                dataSet.Tables.Add(clientsTable); // Добавление таблицы клиентов в набор данных
+                dataSet.Tables.Add(accountsTable); // Добавление таблицы счетов в набор данных
 
-                // Формируем название файла с текущей датой и временем
+                // Формирование названия файла с текущей датой и временем
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
                 string fileName = $"EnergoLIST_{timestamp}.xml";
 
-                // Сохраняем данные в XML файл с применением схемы
+                // Настройки для записи XML файла
                 XmlWriterSettings settings = new XmlWriterSettings
                 {
                     Indent = true,
@@ -197,6 +240,7 @@ namespace Energo
                     Encoding = Encoding.UTF8
                 };
 
+                // Запись данных в XML файл с применением схемы
                 using (XmlWriter writer = XmlWriter.Create(fileName, settings))
                 {
                     dataSet.WriteXml(writer, XmlWriteMode.WriteSchema);
@@ -210,6 +254,7 @@ namespace Energo
             }
         }
 
+        // Метод для импорта данных из XML файла
         private void ImportFromXml()
         {
             try
@@ -229,6 +274,7 @@ namespace Energo
                     {
                         foreach (DataRow row in table.Rows)
                         {
+                            // Формирование SQL-запроса для вставки данных
                             string insertQuery = $"INSERT INTO {table.TableName} ({string.Join(", ", table.Columns.Cast<DataColumn>().Select(c => c.ColumnName))}) VALUES ({string.Join(", ", row.ItemArray.Select((item, index) => $"@p{index}"))}) ON CONFLICT DO NOTHING";
                             using (NpgsqlCommand command = new NpgsqlCommand(insertQuery, connection))
                             {
