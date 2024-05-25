@@ -19,7 +19,7 @@
 
 1. Склонируйте репозиторий:
     ```sh
-    https://github.com/SKOLIA0/Energo.git
+    git clone https://github.com/SKOLIA0/Energo.git
     ```
 
 2. Перейдите в директорию проекта:
