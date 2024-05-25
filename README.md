@@ -53,13 +53,7 @@ PostgreSQL 16
     ```
 
 2. Выполните SQL-скрипт для создания таблиц, функций и триггеров. Скопируйте содержимое файла `create_db.sql` и выполните его в клиенте PostgreSQL:
-    ```sql
-    -- Создание базы данных
-CREATE DATABASE energo_db;
-
--- Подключение к базе данных
-\c energo_db;
-
+```sql
 -- Создание таблицы клиентов
 -- Таблица Clients хранит информацию о клиентах
 CREATE TABLE Clients (
@@ -68,7 +62,8 @@ CREATE TABLE Clients (
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Дата создания записи
     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- Дата последнего обновления записи
 );
-
+```
+```sql 
 -- Создание таблицы счетов
 -- Таблица Accounts хранит информацию о счетах клиентов
 CREATE TABLE Accounts (
@@ -78,7 +73,9 @@ CREATE TABLE Accounts (
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Дата создания записи
     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- Дата последнего обновления записи
 );
+```
 
+```sql 
 -- Создание таблицы транзакций
 -- Таблица Transactions хранит информацию о транзакциях между счетами
 CREATE TABLE Transactions (
@@ -90,7 +87,9 @@ CREATE TABLE Transactions (
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Дата создания записи
     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- Дата последнего обновления записи
 );
+```
 
+```sql 
 -- Вставка тестовых данных в таблицу Clients
 INSERT INTO Clients (Name) VALUES 
 ('Client 1'), 
@@ -98,7 +97,8 @@ INSERT INTO Clients (Name) VALUES
 ('Client 3'), 
 ('Client 4'), 
 ('Client 5');
-
+```
+```sql 
 -- Вставка тестовых данных в таблицу Accounts
 INSERT INTO Accounts (ClientID, Balance) VALUES 
 (1, 1000.00), (1, 1500.00),
@@ -106,7 +106,8 @@ INSERT INTO Accounts (ClientID, Balance) VALUES
 (3, 3000.00), (3, 3500.00),
 (4, 4000.00), (4, 4500.00),
 (5, 5000.00), (5, 5500.00);
-
+```
+```sql 
 -- Создание функции для обновления поля UpdatedAt
 -- Эта функция будет использоваться триггерами для автоматического обновления поля UpdatedAt при изменении записей
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -116,28 +117,32 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
+```
+```sql 
 -- Создание триггера для таблицы Clients
 -- Триггер обновляет поле UpdatedAt при изменении записей в таблице Clients
 CREATE TRIGGER update_clients_updated_at
 BEFORE UPDATE ON Clients
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
-
+```
+```sql 
 -- Создание триггера для таблицы Accounts
 -- Триггер обновляет поле UpdatedAt при изменении записей в таблице Accounts
 CREATE TRIGGER update_accounts_updated_at
 BEFORE UPDATE ON Accounts
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
-
+```
+```sql 
 -- Создание триггера для таблицы Transactions
 -- Триггер обновляет поле UpdatedAt при изменении записей в таблице Transactions
 CREATE TRIGGER update_transactions_updated_at
 BEFORE UPDATE ON Transactions
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
-
+```
+```sql 
 -- Создание хранимой процедуры для выполнения транзакций между счетами
 -- Хранимая процедура проверяет наличие достаточного баланса на счете отправителя, выполняет транзакцию и обновляет балансы
 CREATE OR REPLACE FUNCTION transfer_amount(
@@ -170,12 +175,8 @@ GRANT EXECUTE ON FUNCTION update_updated_at_column() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION transfer_amount(integer, integer, numeric) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION update_updated_at_column() TO gen_user;
 GRANT EXECUTE ON FUNCTION transfer_amount(integer, integer, numeric) TO gen_user;
-
-    -- Скопируйте и выполните скрипт, представленный выше
-    ```
-
-
-
+-- Скопируйте и выполните скрипт, представленный выше
+```
 
 
 ## Использование
